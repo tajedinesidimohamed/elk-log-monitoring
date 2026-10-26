@@ -1,0 +1,20 @@
+# Filebeat : surveille les fichiers de logs et envoie chaque nouvelle ligne à Logstash.
+
+filebeat.inputs:
+  - type: filestream
+    id: nginx-access
+    paths:
+      # ./logs sur l'hôte, monté en lecture seule dans le conteneur
+      - /usr/share/filebeat/logs/*.log
+    # Étiquette utile pour filtrer la source dans Logstash
+    fields:
+      log_source: nginx
+    fields_under_root: true
+
+# Envoi vers Logstash (port 5044, protocole Beats)
+output.logstash:
+  hosts: ["logstash:5044"]
+
+# Pas d'envoi de métriques internes vers Elasticsearch
+monitoring.enabled: false
+logging.level: info

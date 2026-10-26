@@ -1,0 +1,2 @@
+# Fins de ligne LF pour tous les fichiers texte (ils sont lus dans des conteneurs Linux)
+* text=auto eol=lf

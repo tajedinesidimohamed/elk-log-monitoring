@@ -1,0 +1,98 @@
+# Stack ELK + Filebeat pour un lab local (un seul nœud Elasticsearch).
+# Les valeurs ${VAR:-défaut} viennent de .env ; sans .env, les défauts s'appliquent.
+name: elk-log-monitoring
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELK_VERSION:-8.15.3}
+    container_name: elasticsearch
+    environment:
+      - cluster.name=elk-lab
+      - node.name=es01
+      # Un seul nœud : pas d'élection de master, pas de bootstrap checks de production
+      - discovery.type=single-node
+      # Lab local uniquement : pas d'authentification ni de TLS (voir README pour la production)
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      # Machine learning inutile ici, le désactiver économise de la RAM
+      - xpack.ml.enabled=false
+      # Sur un portable au disque presque plein, ES passerait les index en lecture seule
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      # Tas JVM limité (~1 Go) pour tourner sur un portable
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms1g -Xmx1g}
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "127.0.0.1:${ES_PORT:-9200}:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${ELK_VERSION:-8.15.3}
+    container_name: logstash
+    environment:
+      - LS_JAVA_OPTS=${LS_JAVA_OPTS:--Xms256m -Xmx256m}
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      # L'API de monitoring répond quand le pipeline "main" est chargé
+      test: ["CMD-SHELL", "curl -fs http://localhost:9600/_node/pipelines/main || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${ELK_VERSION:-8.15.3}
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - TELEMETRY_OPTIN=false
+    ports:
+      - "127.0.0.1:${KIBANA_PORT:-5601}:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      # Kibana est prêt quand son statut global vaut "available"
+      test: ["CMD-SHELL", "curl -fs http://localhost:5601/api/status | grep -q '\"level\":\"available\"' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:${ELK_VERSION:-8.15.3}
+    container_name: filebeat
+    # Les fichiers montés depuis Windows n'ont pas les droits Unix attendus par Filebeat
+    command: ["filebeat", "-e", "--strict.perms=false"]
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/usr/share/filebeat/logs:ro
+      # Registre Filebeat (position de lecture dans chaque fichier)
+      - filebeatdata:/usr/share/filebeat/data
+    depends_on:
+      logstash:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "filebeat test output --strict.perms=false || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  esdata:
+  filebeatdata:

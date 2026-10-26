@@ -1,0 +1,5 @@
+# Configuration générale de Logstash
+# API de monitoring accessible depuis le réseau Docker (utilisée par le healthcheck)
+api.http.host: "0.0.0.0"
+# Pas de monitoring X-Pack (il chercherait un Elasticsearch sécurisé)
+xpack.monitoring.enabled: false
