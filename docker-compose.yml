@@ -60,6 +60,9 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - TELEMETRY_OPTIN=false
+      # Ni bannière de télémétrie ni avertissement "cluster non sécurisé" (lab local, voir README)
+      - TELEMETRY_ALLOWCHANGINGOPTINSTATUS=false
+      - XPACK_SECURITY_SHOWINSECURECLUSTERWARNING=false
     ports:
       - "127.0.0.1:${KIBANA_PORT:-5601}:5601"
     depends_on:
