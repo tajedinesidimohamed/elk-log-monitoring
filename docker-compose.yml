@@ -40,6 +40,8 @@ services:
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      # Index template (mapping des champs nginx-*) installé par la sortie elasticsearch
+      - ./logstash/templates:/usr/share/logstash/templates:ro
     depends_on:
       elasticsearch:
         condition: service_healthy
