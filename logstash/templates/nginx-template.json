@@ -1,0 +1,39 @@
+{
+  "index_patterns": ["nginx-*"],
+  "priority": 200,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic_templates": [
+        {
+          "strings_as_keyword": {
+            "match_mapping_type": "string",
+            "mapping": { "type": "keyword", "ignore_above": 1024 }
+          }
+        }
+      ],
+      "properties": {
+        "@timestamp":             { "type": "date" },
+        "remote_addr":            { "type": "ip" },
+        "method":                 { "type": "keyword" },
+        "uri":                    { "type": "keyword", "ignore_above": 2048 },
+        "status":                 { "type": "short" },
+        "status_family":          { "type": "keyword" },
+        "bytes_sent":             { "type": "long" },
+        "request_time":           { "type": "float" },
+        "response_time_ms":       { "type": "integer" },
+        "upstream_addr":          { "type": "keyword" },
+        "upstream_status":        { "type": "keyword" },
+        "upstream_response_time": { "type": "keyword" },
+        "user_agent":             { "type": "keyword", "ignore_above": 1024 },
+        "log_origin":             { "type": "keyword" },
+        "log_source":             { "type": "keyword" },
+        "tags":                   { "type": "keyword" },
+        "message":                { "type": "text" }
+      }
+    }
+  }
+}
