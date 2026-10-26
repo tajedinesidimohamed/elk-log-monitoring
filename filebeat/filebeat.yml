@@ -6,6 +6,10 @@ filebeat.inputs:
     paths:
       # ./logs sur l'hôte, monté en lecture seule dans le conteneur
       - /usr/share/filebeat/logs/*.log
+    # Détection rapide des nouveaux fichiers et des nouvelles lignes (démo plus réactive)
+    prospector.scanner.check_interval: 2s
+    backoff.init: 1s
+    backoff.max: 2s
     # Étiquette utile pour filtrer la source dans Logstash
     fields:
       log_source: nginx
