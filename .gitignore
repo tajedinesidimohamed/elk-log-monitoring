@@ -1,0 +1,16 @@
+# Variables d'environnement locales (jamais versionnées)
+.env
+
+# Logs générés (on garde seulement le dossier)
+logs/*
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Éditeur / OS
+.vscode/
+.DS_Store
+Thumbs.db
